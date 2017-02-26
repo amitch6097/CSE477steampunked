@@ -11,7 +11,9 @@ session_start();
 define("STEAMPUNKED_SESSION", "steampunked");
 
 if(!isset($_SESSION["STEAMPUNKED_SESSION"])){
-    $_SESSION["STEAMPUNKED_SESSION"] = new Steampunked\Player("jerry");
+    $_SESSION["STEAMPUNKED_SESSION"] = new \Steampunked\Game(); //should be new model
 }
+//$_SESSION["STEAMPUNKED_SESSION"] = new \Steampunked\Game(); //should be new model
 
-$guessing = $_SESSION["STEAMPUNKED_SESSION"];
+
+$steampunked = $_SESSION["STEAMPUNKED_SESSION"];

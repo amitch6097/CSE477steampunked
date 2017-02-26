@@ -69,4 +69,12 @@ class Pipes
 
         return $make_array[$random_number];
     }
+
+    public function start_pipes(){
+        $pipes = [];
+        $pipes[] = new Pipe(array("valve-closed.png"), array(array(0)), array(array(0)));
+        $pipes[] = new Pipe(array("gauge-0.png"), array(array(2)), array(array(2)));
+        $pipes[] = new Pipe(array("gauge-top-0.png"), array(array(-1)), array(array(-1)));
+        return $pipes;
+    }
 }
