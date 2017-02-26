@@ -37,7 +37,7 @@ class View
         $html = array();
         for($column=0; $column<$size+2;$column++) {
             $html[] = <<<HTML
-<input type="submit" name="leak" value="$row,$column">
+            <div class="empty"></div>
 HTML;
         }
         return $html;
@@ -74,6 +74,36 @@ HTML;
             $pipe_object = $pipe[1];
             $pipe_image = $pipe_object->get_image();
 
+            $new_element = <<<HTML
+<img src="images/$pipe_image" alt="$pipe_image">
+HTML;
+            $this->grid[$row][$column] = $new_element;
+        }
+    }
+    public function update_smoke(){
+        $smoke_to_add = $this->model->get_open();
+        $current_player_smoke = $smoke_to_add[0];
+        $other_player_smoke = $smoke_to_add[1];
+
+        foreach($current_player_smoke as $pipe){
+            $location = $pipe[0]; //[row, column]
+            $row = $location[0];
+            $column = $location[1];
+
+            $pipe_object = $pipe[1];
+            $pipe_image = $pipe_object->get_image();
+            $new_element = <<<HTML
+<input type="submit" name="leak" value="$row,$column" style="background-image: url('images/$pipe_image') ;">
+HTML;
+            $this->grid[$row][$column] = $new_element;
+        }
+        foreach($other_player_smoke as $pipe){
+            $location = $pipe[0]; //[row, column]
+            $row = $location[0];
+            $column = $location[1];
+
+            $pipe_object = $pipe[1];
+            $pipe_image = $pipe_object->get_image();
             $new_element = <<<HTML
 <img src="images/$pipe_image" alt="$pipe_image">
 HTML;
@@ -137,6 +167,7 @@ HTML;
      */
     public function present(){
         $this->update_view();
+        $this->update_smoke();
         $grid = $this->get_grid();
         $bottom = $this->bottom_view();
         $html = <<<HTML

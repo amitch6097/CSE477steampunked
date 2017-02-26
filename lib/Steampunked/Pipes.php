@@ -77,4 +77,7 @@ class Pipes
         $pipes[] = new Pipe(array("gauge-top-0.png"), array(array(-1)), array(array(-1)));
         return $pipes;
     }
+    public function smoke(){
+         return new Pipe(array("leak-e.png", "leak-s.png", "leak-w.png", "leak-n.png"), array(array(0,1,2,3), array(0,1,2,3), array(0,1,2,3), array(0,1,2,3)), array(array(0), array(1), array(2), array(3)));
+    }
 }

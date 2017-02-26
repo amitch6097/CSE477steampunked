@@ -21,13 +21,14 @@ class Controller
             $this->reset = true;
         }
         else if(isset($post['rotate'])) {
-            if(isset($post['pipe'])){
+
+            if(isset($post['pipe'])){ //get the value of selected pipe
                 $value = $post['pipe'];
                 $this->game->rotate($value);
             }
         }
         else if(isset($post['discard'])) {
-            if(isset($post['pipe'])){
+            if(isset($post['pipe'])){ //get the value of selected pipe
                 $value = $post['pipe'];
                 $this->game->discard($value);
             }
@@ -36,13 +37,12 @@ class Controller
             $this->game->open_valve();
         }
 
-        else if(isset($post['leak'])) {
-            if(isset($post['pipe'])){
+        else if(isset($post['leak'])) { //get the value of selected grid button
+            if(isset($post['pipe'])){ //get the value of selected pipe
                 $value = $post['pipe'];
                 $this->game->submit(strip_tags($post['leak']), $value);
             }
         }
-
     }
     public function isReset(){
         return $this->reset;
