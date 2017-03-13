@@ -15,12 +15,13 @@ class Game
     private $current_player; // integer, index for use in $players
 
     private $pipes; // Pipes Object
-    private $smoke;
     private $update_pipes; //Pipes to add to the view
     private $bottom_pipes; //Array of Arrays [player1 bottom_pipes, player2 bottom_pipes]
+    private $open;
 
     public function __construct($name1, $name2)
     {
+        $this->open = false;
         //add pipes object
         $this->pipes = new \Steampunked\Pipes();
 
@@ -32,29 +33,47 @@ class Game
 
         //intalize both players starting pipes
         $starter_pipes = $this->pipes->start_pipes();
-        $new_pipes1 = $this->players[0]->initalize_pipes(1, $starter_pipes);
-        $new_pipes2 = $this->players[1]->initalize_pipes(2, $starter_pipes);
-        $this->update_pipes = array_merge($new_pipes1, $new_pipes2); //add it to pipes to update
+
+        $this->players[0]->add_pipe("0,7", $starter_pipes[2]);
+        $this->players[0]->add_pipe("1,7", $starter_pipes[1]);
+        $this->players[0]->add_pipe("0,0", $starter_pipes[0]);
+
+        $this->players[1]->add_pipe("3,7", $starter_pipes[2]);
+        $this->players[1]->add_pipe("4,7", $starter_pipes[1]);
+        $this->players[1]->add_pipe("5,0", $starter_pipes[0]);
 
         //setup the bottom pipes for both players
         $this->bottom_pipes = array($this->make_bottom_pipes(),$this->make_bottom_pipes());
-        $this->smoke = array(array(), array());
-        $this->update_smoke(0);
-        $this->update_smoke(1);
-    }
-    private function update_smoke($player){
-        $open_locations = $this->players[$player]->get_open_locations();
-        foreach ($open_locations as $open) {
-            $this->smoke[$player][] = array($open, $this->pipes->smoke());
-        }
     }
 
-    public function get_open(){
+    public function get_open_from_player(){
+        $this->update_smoke();
+
         $next_player = (($this->current_player + 1)%2);
-        $both = array();
-        $both[0]  = $this->smoke[$this->current_player];
-        $both[1] = $this->smoke[$next_player];
+        $both = [];
+        $both[] = $this->players[$this->current_player]->get_open_locations();
+        $both[] = $this->players[$next_player]->get_open_locations();
+
         return $both;
+    }
+
+    private function update_smoke(){
+        foreach (array_keys($this->players[0]->get_open_locations()) as $location){
+            if(in_array($location, array_keys($this->players[0]->get_pipes()))){
+                $this->players[0]->remove_smoke($location);
+            }
+            if (in_array($location, array_keys($this->players[1]->get_pipes()))){
+                $this->players[1]->remove_smoke($location);
+            }
+        }
+        foreach (array_keys($this->players[1]->get_open_locations()) as $location){
+            if(in_array($location, array_keys($this->players[0]->get_pipes()))){
+                $this->players[0]->remove_smoke($location);
+            }
+            if (in_array($location, array_keys($this->players[1]->get_pipes()))){
+                $this->players[1]->remove_smoke($location);
+            }
+        }
     }
 
     private function make_bottom_pipes(){
@@ -77,12 +96,24 @@ class Game
         return $this->bottom_pipes[$this->current_player];
     }
 
-    public function get_update_pipes(){
+    public function get_pipes(){
         /**
          * Returns the pipes that need to be added to the grid
          * @return array [[row, column], pipe object]
          */
-        return $this->update_pipes;
+//        return $this->update_pipes;
+        $ret  = [];
+        foreach(array_keys($this->players[0]->get_pipes()) as $key){
+            if($key != '0'){
+                $ret[$key] = $this->players[0]->get_pipes()[$key];
+            }
+        }
+        foreach(array_keys($this->players[1]->get_pipes()) as $key){
+            if($key != '0') {
+                $ret[$key] = $this->players[1]->get_pipes()[$key];
+            }
+        }
+        return $ret;
     }
     public function get_name(){
         /**
@@ -105,25 +136,16 @@ class Game
         $this->change_turn();
     }
     public function open_valve(){
-        pass;
+        $this->open = true;
     }
     public function submit($row_column, $num){
-        /**
-         * $row_column, is the selected button on the grid
-         * $num is the selected pipe from bottom pipes
-         * adds the selected pipe to the grid, removes the pipe from
-         * bottom pipes, and changes the turn
-         */
-        $row_column_array = explode(",", $row_column);
+
         $pipe_to_add = $this->bottom_pipes[$this->current_player][$num];
 
-        $this->update_pipes[] = array($row_column_array, $pipe_to_add);
-        $this->remove_from_smoke($row_column_array);
-
-        $this->players[$this->current_player]->add_pipe($row_column_array, $pipe_to_add);
-//        $this->update_smoke($this->current_player);
-        $this->discard($num);
-
+        if ($this->players[$this->current_player]->does_it_connect($row_column, $pipe_to_add)){
+            $this->players[$this->current_player]->add_pipe($row_column, $pipe_to_add);
+            $this->discard($num);
+        }
     }
     private function change_turn(){
         /**
@@ -132,12 +154,19 @@ class Game
         $this->current_player = ($this->current_player + 1) % 2;
     }
 
-    private function remove_from_smoke($el){
-        $row_column = $el[0];
-        $current_smoke = $this->smoke[$this->current_player];
-        $i  = array_search($row_column, $current_smoke);
-        unset($current_smoke[$i]);
-        $this->smoke[$this->current_player] = $current_smoke;
+
+    public function get_current_player(){
+        return $this->players[$this->current_player];
+    }
+
+    public function get_message(){
+        $name = $this->get_name();
+        if ($this->open && $this->get_current_player()->done()){
+
+            return "$name you win!";
+        }else{
+            return "$name it is your turn.";
+        }
     }
 
 }

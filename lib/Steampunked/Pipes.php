@@ -54,7 +54,7 @@ class Pipes
 
     private function make_tee(){
         $tee_file_names = array("tee-esw.png", "tee-swn.png", "tee-wne.png", "tee-nes.png");
-        $tee_open_at = array(array(0, 1, 2), array(1, 2, 3), array(2, 3, 0), array(3, 0, 1));
+        $tee_open_at = array(array(0, 1, 2), array(1, 2, 3), array(2, 3, 0), array(1, 0, 3));
         $tee_connects_to = array(array(0, 1, 2), array(1, 2, 3), array(2, 3, 0), array(3, 0, 1));
 
         return new Pipe($tee_file_names, $tee_open_at, $tee_connects_to);

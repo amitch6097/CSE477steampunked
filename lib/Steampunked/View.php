@@ -12,6 +12,7 @@ class View
 {
     private $size = 6; //default grid size is 6X6
     private $model;
+    private $grid;
 
     /**
      * $size is the size of the grid you want to make ie.
@@ -65,13 +66,13 @@ HTML;
     }
 
     public function update_view(){
-        $pipes_to_add = $this->model->get_update_pipes();
-        foreach($pipes_to_add as $pipe){
-            $location = $pipe[0]; //[row, column]
-            $row = $location[0];
-            $column = $location[1];
-
-            $pipe_object = $pipe[1];
+        $pipes_to_add = $this->model->get_pipes();
+        $pipes_to_add_keys = array_keys($pipes_to_add);
+        foreach($pipes_to_add_keys as $location){
+            $location_array  = explode(",", $location);
+            $row = $location_array[0]; //"rows,column"
+            $column = $location_array[1];
+            $pipe_object = $pipes_to_add[$location];
             $pipe_image = $pipe_object->get_image();
 
             $new_element = <<<HTML
@@ -81,29 +82,35 @@ HTML;
         }
     }
     public function update_smoke(){
-        $smoke_to_add = $this->model->get_open();
+        $smoke_to_add = $this->model->get_open_from_player();
         $current_player_smoke = $smoke_to_add[0];
         $other_player_smoke = $smoke_to_add[1];
 
-        foreach($current_player_smoke as $pipe){
-            $location = $pipe[0]; //[row, column]
-            $row = $location[0];
-            $column = $location[1];
 
-            $pipe_object = $pipe[1];
+        foreach(array_keys($current_player_smoke) as $location){
+
+            $location_array  = explode(",", $location);
+            $row = $location_array[0]; //"rows,column"
+            $column = $location_array[1];
+            $pipe_object = $current_player_smoke[$location];
             $pipe_image = $pipe_object->get_image();
+
             $new_element = <<<HTML
 <input type="submit" name="leak" value="$row,$column" style="background-image: url('images/$pipe_image') ;">
 HTML;
             $this->grid[$row][$column] = $new_element;
         }
-        foreach($other_player_smoke as $pipe){
-            $location = $pipe[0]; //[row, column]
-            $row = $location[0];
-            $column = $location[1];
+        foreach(array_keys($other_player_smoke) as $location){
+            if ($location == '0'){
+                continue;
+            }
 
-            $pipe_object = $pipe[1];
+            $location_array  = explode(",", $location);
+            $row = $location_array[0]; //"rows,column"
+            $column = $location_array[1];
+            $pipe_object = $other_player_smoke[$location];
             $pipe_image = $pipe_object->get_image();
+
             $new_element = <<<HTML
 <img src="images/$pipe_image" alt="$pipe_image">
 HTML;
@@ -116,9 +123,9 @@ HTML;
      * @return HTML string
      */
     private function message(){
-        $name = $this->model->get_name();
+        $message = $this->model->get_message();
         $html = <<<HTML
-<p>$name it is your turn!</p>
+<p>$message</p>
 HTML;
         return $html;
     }

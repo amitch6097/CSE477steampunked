@@ -14,52 +14,59 @@ class Player
     private $name;
     private $pipes = [];
     private $open_locations = [];
+    private $end_location;
 
 
     function __construct($name){
         $this->name = $name;
     }
 
-    public function initalize_pipes($number, $init_pipes){
-        /**
-         * sets the players pipes location based on their $number
-         * @return array of pipes which needs to be added to update_pipes in Game
-         */
-
-        if($number == 1){
-            $pipes[] = array(array(1,7), $init_pipes[1]);
-            $pipes[] = array(array(0,7), $init_pipes[2]);
-
-            $pipes[] = array(array(0,0), $init_pipes[0]);
-
-            $this->open_locations = array(array(0, 1));
-        }else{
-            $pipes[] = array(array(4,7), $init_pipes[1]);
-            $pipes[] = array(array(3,7), $init_pipes[2]);
-
-            $pipes[] = array(array(5,0), $init_pipes[0]);
-            $this->open_locations = array(array(5, 1));
-        }
-        $this->pipes = $pipes;
-        return $pipes;
-    }
-
     public function add_pipe($location, $pipe){
-        $this->pipes[] = array($location, $pipe);
-        $this->update_open($location, $pipe);
+        $this->pipes[$location] = $pipe;
+        $this->update_open($location);
     }
-    private function update_open($location, $pipe){
-        $adds = array(array(0,1), array(1,0), array(0, -1), array(-1, 0));
-        $locations = array();
+    private function update_open($location){
+        $add_to = array(array(0, 1), array(1, 0), array(0, -1), array(-1, 0));
 
-        $open_at = $pipe->get_opens_at();
-        $count = 0;
-        foreach ($open_at as $at){
+        if (count($this->pipes) == 3){
+            $location_array = explode(",", $location);
+            $new_row = intval($location_array[0]) + $add_to[0][0];
+            $new_col = intval($location_array[1]) + $add_to[0][1];
+            $open_location = "$new_row,$new_col";
+            $this->open_locations[$open_location] = new \Steampunked\Smoke(2);
 
-            $row_add = $adds[$at][0];
-            $column_add = $adds[$at][1];
-            $this->open_locations = array($location[0] + $row_add, $location[0] + $column_add);
+        } else if (count($this->pipes) > 3) {
+            $last_add = $this->pipes[$location];
+
+            $pipe_location = $this->open_locations[$location]->get_connects_to()[0];
+            unset($this->open_locations[$location]);
+
+            foreach($last_add->get_opens_at() as $open){
+                if($open == -1 ||  $pipe_location == $open){ //cap pipe or open side is where a pipe is
+                    continue;
+                }
+                $location_array = explode(",", $location);
+                $new_row = intval($location_array[0]) + $add_to[$open][0];
+                $new_col = intval($location_array[1]) + $add_to[$open][1];
+                $this->open_locations["$new_row,$new_col"] = new \Steampunked\Smoke((($open+2)%4));
+            }
+        } else {
+            $location_array = explode(",", $location);
+            $new_row = intval($location_array[0]) + $add_to[2][0];
+            $new_col = intval($location_array[1]) + $add_to[2][1];
+            $this->end_location = "$new_row,$new_col";
+            return;
         }
+    }
+
+    public function does_it_connect($row_column, $pipe){
+        if(isset($this->open_locations[$row_column])){
+            if(in_array($this->open_locations[$row_column]->get_connects_to()[0], $pipe->get_connects_to())){
+                return true;
+
+            }
+        }
+        return false;
     }
     public function get_open_locations(){
         return $this->open_locations;
@@ -71,5 +78,18 @@ class Player
 
     public function get_pipes(){
         return $this->pipes;
+    }
+
+    public function remove_smoke($location){
+        unset($this->open_locations[$location]);
+    }
+
+    public function done(){
+        if(sizeof($this->open_locations) == 0 && in_array($this->end_location, array_keys($this->open_locations))){
+            if (in_array(0, $this->open_locations[$this->end_location]->get_opens_at())){
+                return true;
+            }
+        }
+        return false;
     }
 }
