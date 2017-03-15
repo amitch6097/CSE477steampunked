@@ -13,15 +13,16 @@ class Controller
 {
     private $game;
     private $reset = false;
+    private $page = 'steampunked.php';
 
     public function __construct(Game $game, $post)
     {
         $this->game = $game;
         if(isset($post['clear'])) {
-            $this->reset = true;
+            $this->game->change_turn();
+            $this->page = 'win.php';
         }
         else if(isset($post['rotate'])) {
-
             if(isset($post['pipe'])){ //get the value of selected pipe
                 $value = $post['pipe'];
                 $this->game->rotate($value);
@@ -34,9 +35,10 @@ class Controller
             }
         }
         else if(isset($post['open_valve'])) {
-            $this->game->open_valve();
+            if($this->game->open_valve()){
+                $this->page = 'win.php';
+            }
         }
-
         else if(isset($post['leak'])) { //get the value of selected grid button
             if(isset($post['pipe'])){ //get the value of selected pipe
                 $value = $post['pipe'];
@@ -46,5 +48,8 @@ class Controller
     }
     public function isReset(){
         return $this->reset;
+    }
+    public function getPage(){
+        return $this->page;
     }
 }

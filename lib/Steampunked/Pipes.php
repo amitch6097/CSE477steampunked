@@ -77,6 +77,13 @@ class Pipes
         $pipes[] = new Pipe(array("gauge-top-0.png"), array(array(-1)), array(array(-1)));
         return $pipes;
     }
+    public function end_pipes(){
+        $pipes = [];
+        $pipes[] = new Pipe(array("valve-open.png"), array(array(0)), array(array(0)));
+        $pipes[] = new Pipe(array("gauge-190.png"), array(array(2)), array(array(2)));
+        $pipes[] = new Pipe(array("gauge-top-190.png"), array(array(-1)), array(array(-1)));
+        return $pipes;
+    }
     public function smoke(){
          return new Pipe(array("leak-e.png", "leak-s.png", "leak-w.png", "leak-n.png"), array(array(0,1,2,3), array(0,1,2,3), array(0,1,2,3), array(0,1,2,3)), array(array(0), array(1), array(2), array(3)));
     }

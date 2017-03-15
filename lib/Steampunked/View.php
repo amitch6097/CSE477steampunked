@@ -10,7 +10,7 @@ namespace Steampunked;
 
 class View
 {
-    private $size = 6; //default grid size is 6X6
+    private $size; //default grid size is 6X6
     private $model;
     private $grid;
 
@@ -22,6 +22,7 @@ class View
     public function __construct($model)
     {
         $this->model = $model;
+        $this->size = $this->model->get_size();
         $this->grid = $this->make_grid($this->size);
     }
 
@@ -68,8 +69,8 @@ HTML;
     public function update_view(){
         $pipes_to_add = $this->model->get_pipes();
         $pipes_to_add_keys = array_keys($pipes_to_add);
-        foreach($pipes_to_add_keys as $location){
-            $location_array  = explode(",", $location);
+        foreach($pipes_to_add_keys as $location) {
+            $location_array = explode(",", $location);
             $row = $location_array[0]; //"rows,column"
             $column = $location_array[1];
             $pipe_object = $pipes_to_add[$location];
@@ -78,14 +79,35 @@ HTML;
             $new_element = <<<HTML
 <img src="images/$pipe_image" alt="$pipe_image">
 HTML;
-            $this->grid[$row][$column] = $new_element;
-        }
+                $this->grid[$row][$column] = $new_element;
+            }
     }
     public function update_smoke(){
         $smoke_to_add = $this->model->get_open_from_player();
         $current_player_smoke = $smoke_to_add[0];
         $other_player_smoke = $smoke_to_add[1];
 
+        foreach(array_keys($other_player_smoke) as $location) {
+            if ($location == '0') {
+                continue;
+            }
+
+            $location_array = explode(",", $location);
+            $row = $location_array[0]; //"rows,column"
+            $column = $location_array[1];
+            $pipe_object = $other_player_smoke[$location];
+            $pipe_image = $pipe_object->get_image();
+            $int_row = intval($row);
+            $int_col = intval($column);
+
+            if($int_row < $this->size and $int_col <= $this->size+1 and $int_col >=0 and $int_row >=0){
+
+                $new_element = <<<HTML
+<img src="images/$pipe_image" alt="$pipe_image">
+HTML;
+                $this->grid[$row][$column] = $new_element;
+            }
+        }
 
         foreach(array_keys($current_player_smoke) as $location){
 
@@ -94,27 +116,15 @@ HTML;
             $column = $location_array[1];
             $pipe_object = $current_player_smoke[$location];
             $pipe_image = $pipe_object->get_image();
+            $int_row = intval($row);
+            $int_col = intval($column);
 
-            $new_element = <<<HTML
+            if($int_row < $this->size and $int_col <= $this->size+1 and $int_col >=0 and $int_row >=0){
+                $new_element = <<<HTML
 <input type="submit" name="leak" value="$row,$column" style="background-image: url('images/$pipe_image') ;">
 HTML;
-            $this->grid[$row][$column] = $new_element;
-        }
-        foreach(array_keys($other_player_smoke) as $location){
-            if ($location == '0'){
-                continue;
+                $this->grid[$row][$column] = $new_element;
             }
-
-            $location_array  = explode(",", $location);
-            $row = $location_array[0]; //"rows,column"
-            $column = $location_array[1];
-            $pipe_object = $other_player_smoke[$location];
-            $pipe_image = $pipe_object->get_image();
-
-            $new_element = <<<HTML
-<img src="images/$pipe_image" alt="$pipe_image">
-HTML;
-            $this->grid[$row][$column] = $new_element;
         }
     }
 

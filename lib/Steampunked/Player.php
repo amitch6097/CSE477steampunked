@@ -15,16 +15,27 @@ class Player
     private $pipes = [];
     private $open_locations = [];
     private $end_location;
+    private $grid_size;
+    private $end;
 
 
-    function __construct($name){
+    function __construct($name, $size, $end){
         $this->name = $name;
+        $this->grid_size = $size;
+        $this->end = $end;
+    }
+
+    public function update_end($end_pipes){
+        $this->pipes[$this->end[0]] = $end_pipes[2];
+        $this->pipes[$this->end[1]] = $end_pipes[1];
+        $this->pipes[$this->end[2]] = $end_pipes[0];
     }
 
     public function add_pipe($location, $pipe){
         $this->pipes[$location] = $pipe;
         $this->update_open($location);
     }
+
     private function update_open($location){
         $add_to = array(array(0, 1), array(1, 0), array(0, -1), array(-1, 0));
 
@@ -59,15 +70,54 @@ class Player
         }
     }
 
-    public function does_it_connect($row_column, $pipe){
-        if(isset($this->open_locations[$row_column])){
-            if(in_array($this->open_locations[$row_column]->get_connects_to()[0], $pipe->get_connects_to())){
-                return true;
+    public function does_it_connect($row_column, $pipe, $other_players_pipes){
+        $add_to = array(array(0, 1), array(1, 0), array(0, -1), array(-1, 0));
+        $location_array = explode(",", $row_column);
+        $connector = $this->open_locations[$row_column]->get_connects_to()[0];
 
+        //if it is a smoke location
+        if(isset($this->open_locations[$row_column])){
+            //if it connects to the smoke location
+            if(in_array($this->open_locations[$row_column]->get_connects_to()[0], $pipe->get_connects_to())){
+
+                //if all connections are in the grid
+                $connections = $pipe->get_connects_to();
+                foreach ($connections as $connection) {
+
+                    $nrow = intval($location_array[0]) + $add_to[$connection][0];
+                    $ncol = intval($location_array[1]) + $add_to[$connection][1];
+
+                    //pipe does not open to empty row
+                    if($connection == $connector){
+                        continue;
+                    }
+
+                    else if ($nrow >= $this->grid_size or $nrow < 0) {
+                        return false;
+                    }
+                    //pipe does not open to empty column
+                    else if ($ncol > $this->grid_size + 1 or $ncol < 0) {
+                        return false;
+                    }
+                    //pipe does not open to own pipe
+                    else if (isset($this->pipes["$nrow,$ncol"])){
+                        $open_ar = $this->pipes["$nrow,$ncol"]->get_opens_at();
+                        if (in_array((($connection+2)%4), $open_ar)){
+                            continue;
+                        }
+                        return false;
+                    }
+                    //pipe does not open to another players pipes
+                    else if (isset($other_players_pipes["$nrow,$ncol"])){
+                        return false;
+                    }
+                }
+                return true;
             }
         }
         return false;
     }
+
     public function get_open_locations(){
         return $this->open_locations;
     }
@@ -85,8 +135,8 @@ class Player
     }
 
     public function done(){
-        if(sizeof($this->open_locations) == 0 && in_array($this->end_location, array_keys($this->open_locations))){
-            if (in_array(0, $this->open_locations[$this->end_location]->get_opens_at())){
+        if(sizeof($this->open_locations) == 0 && in_array($this->end_location, array_keys($this->pipes))){
+            if (in_array(0, $this->pipes[$this->end_location]->get_opens_at())){
                 return true;
             }
         }

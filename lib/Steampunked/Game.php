@@ -18,29 +18,41 @@ class Game
     private $update_pipes; //Pipes to add to the view
     private $bottom_pipes; //Array of Arrays [player1 bottom_pipes, player2 bottom_pipes]
     private $open;
+    private $size_of_grid;
 
-    public function __construct($name1, $name2)
+    public function construct($name1, $name2, $size)
     {
+        $this->size_of_grid = $size;
         $this->open = false;
         //add pipes object
         $this->pipes = new \Steampunked\Pipes();
 
+        $middle = $size/2; //3
+        $top = $middle-3; // 3-3
+        $top2 = $middle-2; //2
+        $bottom = $middle+2;
+        $bottom2 = $middle+1;
+        $end = $size + 1;
+
+        $player1_end = array("$top,$end", "$top2,$end", "$top,0");
+        $player2_end = array("$middle,$end", "$bottom2,$end", "$bottom,0");
+
         //make an array of both player objects
         $this->players = array();
-        $this->players[] = new \Steampunked\Player($name1);
-        $this->players[] = new \Steampunked\Player($name2);
+        $this->players[] = new \Steampunked\Player($name1, $size, $player1_end);
+        $this->players[] = new \Steampunked\Player($name2, $size, $player2_end);
         $this->current_player = 0; //current player is the first player
 
         //intalize both players starting pipes
         $starter_pipes = $this->pipes->start_pipes();
 
-        $this->players[0]->add_pipe("0,7", $starter_pipes[2]);
-        $this->players[0]->add_pipe("1,7", $starter_pipes[1]);
-        $this->players[0]->add_pipe("0,0", $starter_pipes[0]);
+        $this->players[0]->add_pipe("$top,$end", $starter_pipes[2]);
+        $this->players[0]->add_pipe("$top2,$end", $starter_pipes[1]);
+        $this->players[0]->add_pipe("$top,0", $starter_pipes[0]);
 
-        $this->players[1]->add_pipe("3,7", $starter_pipes[2]);
-        $this->players[1]->add_pipe("4,7", $starter_pipes[1]);
-        $this->players[1]->add_pipe("5,0", $starter_pipes[0]);
+        $this->players[1]->add_pipe("$middle,$end", $starter_pipes[2]);
+        $this->players[1]->add_pipe("$bottom2,$end", $starter_pipes[1]);
+        $this->players[1]->add_pipe("$bottom,0", $starter_pipes[0]);
 
         //setup the bottom pipes for both players
         $this->bottom_pipes = array($this->make_bottom_pipes(),$this->make_bottom_pipes());
@@ -136,37 +148,44 @@ class Game
         $this->change_turn();
     }
     public function open_valve(){
-        $this->open = true;
+        if ($this->get_current_player()->done()){
+            return true;
+        } else {
+            return false;
+        }
     }
     public function submit($row_column, $num){
 
         $pipe_to_add = $this->bottom_pipes[$this->current_player][$num];
+        $next_player_pipes = $this->players[(($this->current_player+1)%2)]->get_pipes();
 
-        if ($this->players[$this->current_player]->does_it_connect($row_column, $pipe_to_add)){
+        if ($this->players[$this->current_player]->does_it_connect($row_column, $pipe_to_add, $next_player_pipes)){
             $this->players[$this->current_player]->add_pipe($row_column, $pipe_to_add);
+            if ($this->get_current_player()->done()){
+                $this->get_current_player()->update_end($this->pipes->end_pipes());
+            }
             $this->discard($num);
         }
     }
-    private function change_turn(){
+
+    public function change_turn(){
         /**
          * changes the current player
          */
         $this->current_player = ($this->current_player + 1) % 2;
     }
 
-
     public function get_current_player(){
         return $this->players[$this->current_player];
     }
 
     public function get_message(){
-        $name = $this->get_name();
-        if ($this->open && $this->get_current_player()->done()){
+    $name = $this->get_name();
+    return "$name it is your turn.";
+    }
 
-            return "$name you win!";
-        }else{
-            return "$name it is your turn.";
-        }
+    public function get_size(){
+        return $this->size_of_grid;
     }
 
 }
